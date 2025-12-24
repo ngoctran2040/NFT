@@ -1,7 +1,11 @@
 package com.example.nft.nft_backend.controller;
 
+import com.example.nft.nft_backend.dto.AdminAuthDTO;
 import com.example.nft.nft_backend.model.NftItem;
+import com.example.nft.nft_backend.model.User;
 import com.example.nft.nft_backend.repository.NftItemRepository;
+import com.example.nft.nft_backend.repository.UserRepository;
+import com.example.nft.nft_backend.util.EthSig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,44 +13,69 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@RestController // Đánh dấu đây là nơi xử lý API
-@RequestMapping("/api/nfts") // Tất cả API trong này sẽ bắt đầu bằng /api/nfts
-@CrossOrigin(origins = "*") // Cho phép Frontend (React) truy cập mà không bị chặn
+@RestController
+@RequestMapping("/api/nfts")
+@CrossOrigin(origins = "*")
 public class NftItemController {
 
-    @Autowired
-    private NftItemRepository nftItemRepository; // Gọi "Thủ kho" NFT
+    @Autowired private NftItemRepository nftItemRepository;
+    @Autowired private UserRepository userRepository;
 
-    // 1. Lấy tất cả NFT (Dùng cho trang khám phá)
+    // ✅ ai cũng xem được
     @GetMapping
     public List<NftItem> getAllNfts() {
         return nftItemRepository.findAll();
     }
 
-    // 2. Lấy danh sách NFT đang rao bán (Marketplace)
+    // ✅ ai cũng xem được (market)
     @GetMapping("/market")
     public List<NftItem> getMarketItems() {
         return nftItemRepository.findByIsListedTrue();
     }
 
-    // 3. Lấy chi tiết 1 NFT theo ID (Trang Detail)
     @GetMapping("/{id}")
     public ResponseEntity<NftItem> getNftById(@PathVariable String id) {
         Optional<NftItem> nft = nftItemRepository.findById(id);
-        // Nếu tìm thấy thì trả về OK, không thấy thì trả về lỗi 404
         return nft.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 4. Tạo NFT mới (Sau khi Mint trên Blockchain xong thì gọi cái này để lưu vào DB)
+    // ===== Admin only =====
+    private void requireAdmin(AdminAuthDTO auth) {
+        try {
+            String recovered = EthSig.recoverAddress(auth.getMessage(), auth.getSignature());
+            String addr = auth.getWalletAddress().toLowerCase();
+
+            if (!recovered.equalsIgnoreCase(addr)) {
+                throw new RuntimeException("Invalid signature");
+            }
+
+            User u = userRepository.findByWalletAddress(addr)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            if (u.getRole() == null || !u.getRole().equalsIgnoreCase("ADMIN")) {
+                throw new RuntimeException("Admin only");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    // ✅ admin mới tạo được
     @PostMapping("/create")
-    public NftItem createNft(@RequestBody NftItem nftItem) {
-        return nftItemRepository.save(nftItem);
-    }
+    public ResponseEntity<?> createNft(
+            @RequestBody NftItem nftItem,
+            @RequestHeader("x-wallet") String wallet,
+            @RequestHeader("x-message") String message,
+            @RequestHeader("x-signature") String signature
+    ) {
+        AdminAuthDTO auth = new AdminAuthDTO();
+        auth.setWalletAddress(wallet);
+        auth.setMessage(message);
+        auth.setSignature(signature);
 
-    // 5. Lấy NFT của một người dùng cụ thể (Trang Profile > My NFTs)
-    @GetMapping("/owner/{ownerAddress}")
-    public List<NftItem> getNftsByOwner(@PathVariable String ownerAddress) {
-        return nftItemRepository.findByOwnerAddress(ownerAddress);
+        requireAdmin(auth);
+
+        return ResponseEntity.ok(nftItemRepository.save(nftItem));
     }
 }

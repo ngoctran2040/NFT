@@ -5,3 +5,6 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://groupDB:groupDB@cluster0.rfblthc.mongodb.net/NFT?retryWrites=true&w=majority&appName=Cluster0
+app:
+  jwtSecret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32+_CHARS"
+  jwtExpireMinutes: 60

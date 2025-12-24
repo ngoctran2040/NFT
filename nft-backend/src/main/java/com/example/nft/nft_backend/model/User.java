@@ -1,31 +1,53 @@
 package com.example.nft.nft_backend.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-@Data // Lombok tự tạo Getters, Setters, toString...
-@NoArgsConstructor // Tạo Constructor không tham số
-@AllArgsConstructor // Tạo Constructor đầy đủ tham số
-@Document(collection = "users") // Tên bảng trong MongoDB sẽ là "users"
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "users")
 public class User {
 
-    @Id // Khóa chính (Primary Key) tự sinh của MongoDB
+    @Id
     private String id;
 
-    @Indexed(unique = true) // Đảm bảo địa chỉ ví là duy nhất, không trùng lặp
+    /**
+     * Role: USER | ADMIN
+     * Mặc định USER
+     */
+    private String role = "USER";
+
+    /**
+     * Địa chỉ ví (unique)
+     */
+    @Indexed(unique = true)
     private String walletAddress;
 
+    /**
+     * Nonce dùng cho MetaMask login
+     */
+    private String nonce;
+
+    private Instant nonceUpdatedAt;
+
+    /**
+     * Thông tin profile
+     */
     private String username;
     private String email;
-    private String bio; // Giới thiệu bản thân
-    private String profileImageUrl; // Link ảnh đại diện
-    private String bannerImageUrl; // Link ảnh bìa
+    private String bio;
+    private String profileImageUrl;
+    private String bannerImageUrl;
 
-    private LocalDateTime createdAt = LocalDateTime.now(); // Thời gian tạo
+    /**
+     * Thời gian tạo user
+     */
+    private Instant createdAt = Instant.now();
 }
