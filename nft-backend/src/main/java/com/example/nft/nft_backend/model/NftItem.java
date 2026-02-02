@@ -1,50 +1,51 @@
 package com.example.nft.nft_backend.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "nfts") // Tên bảng trong MongoDB là "nfts"
+@Document(collection = "nfts")
 public class NftItem {
 
     @Id
     private String id;
 
-    // Token ID trên Blockchain (quan trọng để mapping)
+    // Token ID trên Blockchain
     @Indexed
-    private String tokenId; 
-    
-    // Địa chỉ Smart Contract chứa NFT này
+    private String tokenId;
+
+    // Địa chỉ Smart Contract
     private String contractAddress;
 
     private String name;
     private String description;
-    
-    // URL đến hình ảnh lưu trên IPFS hoặc Server
-    private String imageUrl; 
-    
-    // URL đến file Metadata gốc trên IPFS
+
+    // URL hình ảnh
+    private String imageUrl;
+
+    // URL metadata
     private String metadataUrl;
 
-    // Giá hiện tại (ETH/BNB...)
-    private Double price; 
+    // Giá NFT
+    private Double price;
 
-    // Người tạo ra NFT (Artist)
+    // Artist
     private String creatorAddress;
 
-    // Người sở hữu hiện tại
+    // Chủ sở hữu hiện tại
     private String ownerAddress;
 
-    // Trạng thái: true = đang rao bán, false = chỉ để trưng bày
-    private boolean isListed; 
+    // ✅ ĐỔI TÊN – ĐIỂM MẤU CHỐT
+    // true = đang bán, false = không bán
+    private boolean listed;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 }
